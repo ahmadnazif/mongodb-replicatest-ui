@@ -2,6 +2,8 @@
 using MongoDbReplicaLoadTest.Client.HubClients;
 using Sotsera.Blazor.Toaster;
 using System.Text.Json;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace MongoDbReplicaLoadTest.Client.Pages;
 
@@ -91,6 +93,81 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
 
     #endregion
 
+    #region Part 3
+    protected bool IsStreamingStarted { get; set; }
+    protected int DelayMs { get; set; } = 1000;
+    protected long StreamTotalCount { get; set; } = 0;
+    protected int StreamCurrentCount { get; set; } = 0;
+    protected double StreamPerc { get; set; } = 0;
+
+    protected int StreamCurrentCountInSec { get; set; } = 0;
+    protected int Tps { get; set; }
+    private Timer TpsTimer { get; set; } = null;
+
+    protected async Task StartStreamingAsync()
+    {
+        StartTpsTimer();
+        IsStreamingStarted = true;
+        StreamCurrentCount = 0;
+        StreamTotalCount = await Signalr.CountAsync();
+
+        await foreach(var s in Signalr.StartStreaming(DelayMs))
+        {
+            try
+            {
+                StreamCurrentCount += 1;
+                StreamCurrentCountInSec += 1;
+                StreamPerc = (double)StreamCurrentCount / StreamTotalCount * 100;
+                Logger.LogInformation($"[{StreamCurrentCount}] MsgID: {s.MsgId}, InTime: {s.InTime}");
+                //StateHasChanged();
+            }
+            catch (OperationCanceledException)
+            {
+                Toastr.Info($"Stream stopped at {DateTime.Now}");
+            }
+        }
+    }
+
+    private void StartTpsTimer()
+    {
+        if (TpsTimer != null)
+            TpsTimer.Start();
+        else
+        {
+            TpsTimer = new()
+            {
+                Interval = 2000
+            };
+
+            TpsTimer.Start();
+            TpsTimer.Elapsed += (s, e) =>
+            {
+                Tps = StreamCurrentCountInSec / ((int)TpsTimer.Interval / 1000);
+                StreamCurrentCountInSec = 0;
+                StateHasChanged();
+            };
+        }
+    }
+
+    protected async Task SetStreamingDelayAsync()
+    {
+       var resp = await Signalr.SetDelayAsync(DelayMs);
+
+        if (resp.IsSuccess)
+            Toastr.Success(resp.Message);
+        else
+            Toastr.Error(resp.Message);
+    }
+
+    protected void StopStreaming()
+    {
+        Signalr.StopStreaming();
+        IsStreamingStarted = false;
+        TpsTimer.Stop();
+        Tps = 0;
+    }
+
+    #endregion
 
     protected async Task StartAsync()
     {

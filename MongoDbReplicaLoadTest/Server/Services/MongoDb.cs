@@ -1,4 +1,5 @@
 ﻿using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using MongoDbReplicaLoadTest.Shared.Models;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -109,9 +110,9 @@ public class MongoDb : IMongoDb
     public async IAsyncEnumerable<Sms> StreamSmsAsync([EnumeratorCancellation] CancellationToken ct)
     {
         var filter = Builders<Sms>.Filter.Empty;
-        var list = await QueueCollection.Find(filter).ToListAsync(ct);
+        var list = QueueCollection.Find(filter).ToAsyncEnumerable(ct);
 
-        foreach (var l in list)
+        await foreach (var l in list)
         {
             if (ct.IsCancellationRequested)
                 yield break;
