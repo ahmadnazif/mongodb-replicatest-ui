@@ -1,15 +1,22 @@
 using Microsoft.AspNetCore.ResponseCompression;
+using MongoDbReplicaLoadTest.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
-// Add services to the container.
+builder.Services.AddSingleton<IMongoDb, MongoDb>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+builder.WebHost.ConfigureKestrel(x =>
+{
+    var port = int.Parse(config["Port"]);
+    x.ListenAnyIP(port);
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
@@ -24,9 +31,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 
-app.Run();
+await app.RunAsync();
