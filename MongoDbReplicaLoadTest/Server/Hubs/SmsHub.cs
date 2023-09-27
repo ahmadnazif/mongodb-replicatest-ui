@@ -11,7 +11,7 @@ public class SmsHub : Hub
 {
     private readonly ILogger<SmsHub> logger;
     private readonly IMongoDb db;
-    private CacheService cache;
+    private readonly CacheService cache;
 
     public SmsHub(ILogger<SmsHub> logger, IMongoDb db, CacheService cache)
     {
@@ -20,27 +20,27 @@ public class SmsHub : Hub
         this.cache = cache;
     }
 
-    public async Task<ActionResult<long>> CountCollectionRowAsync()
+    public async Task<long> CountCollectionRowAsync()
     {
         return await db.CountQueueCollectionRowAsync();
     }
 
-    public async Task<ActionResult<PostResponse>> InsertSmsAsync([FromBody] SmsBase sms)
+    public async Task<PostResponse> InsertAsync(SmsBase sms)
     {
         return await db.InsertSmsToQueueAsync(sms.From, sms.To, sms.Content);
     }
 
-    public async Task<ActionResult<PostResponse>> InsertBatchSmsAsync([FromBody] InsertMultiSms sms)
+    public async Task<PostResponse> InsertBatchAsync(InsertMultiSms sms)
     {
         return await db.InsertBatchSmsAsync(sms.Iteration, sms.From, sms.To, sms.Content);
     }
 
-    public async Task<ActionResult<Sms>> GetSmsAsync([FromQuery] string msgId)
+    public async Task<Sms> GetAsync(string msgId)
     {
         return await db.GetSmsFromQueueAsync(msgId);
     }
 
-    public async IAsyncEnumerable<Sms> StreamSmsAsync(int delayMs, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<Sms> StreamAsync(int delayMs, [EnumeratorCancellation] CancellationToken ct)
     {
         cache.DelayMsForSmsStreaming = delayMs;
         var list = db.StreamSmsAsync(ct);
@@ -61,7 +61,7 @@ public class SmsHub : Hub
         }
     }
 
-    public PostResponse SetDelayForSmsStream(int delayMs)
+    public PostResponse SetDelay(int delayMs)
     {
         cache.DelayMsForSmsStreaming = delayMs;
         return new PostResponse

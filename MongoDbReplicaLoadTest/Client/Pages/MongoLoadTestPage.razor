@@ -1,0 +1,77 @@
+﻿@page "/mongo-load-test"
+@inherits MongoLoadTestBase
+
+<h3>MongoDB Replication Load Test</h3>
+<h6>Load Test</h6>
+
+@if (Signalr.IsConnected)
+{
+    <div class="alert alert-success">
+        <div class="row">
+            <div class="col col-sm-1">
+                <button class="btn btn-danger btn-sm" @onclick="async() => await StopAsync()">Disconnect</button>&nbsp;
+            </div>
+            <div class="col col-sm-11">
+                <label><strong>Hub Server URL:</strong> @Signalr.HubUrl</label> |
+                <label>@ConnectionInfo</label>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-dark">
+        <div class="row">
+            <div class="col col-sm-1">
+                <button class="btn btn-success btn-sm" @onclick="async() => await StartAsync()">Connect</button>&nbsp;
+            </div>
+            <div class="col col-sm11">
+                <label><strong>Hub Server URL:</strong> @Signalr.HubUrl</label>
+            </div>
+        </div>
+    </div>
+}
+
+<hr />
+
+<div hidden="@ContentDivHidden()">
+    <div class="card">
+        <div class="card-header">
+            <label>Count all SMS</label>
+        </div>
+        <div class="card-body">
+            <label>&nbsp;</label>
+            <div class="col-sm-10">
+                <button class="btn btn-success" @onclick="async() => await CountAllSmsAsync()">Count</button>
+                <button class="btn btn-outline-secondary" @onclick="() => Clear1()">Clear</button>
+                &nbsp;&nbsp;@Result1
+            </div>
+        </div>
+    </div>
+    <br />
+    <div class="card">
+        <div class="card-header">
+            <label>Get SMS by Message ID</label>
+        </div>
+        <div class="card-body">
+            <label>MSISDN</label>
+            <div class="col-sm-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" @bind="MsgId" />
+                    <button class="btn btn-success" @onclick="async() => await CheckSmsExistAsync()">Check</button>
+                </div>
+                <br />
+                <br />
+                @Result2
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private bool ContentDivHidden()
+    {
+        return Signalr.IsConnected ? false : true;
+    }
+}

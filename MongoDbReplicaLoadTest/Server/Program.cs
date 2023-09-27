@@ -9,6 +9,7 @@ var config = builder.Configuration;
 builder.Services.AddSingleton<CacheService>();
 builder.Services.AddSingleton<IMongoDb, MongoDb>();
 builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdentifier>();
+builder.Services.AddSignalR().AddMessagePackProtocol();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
