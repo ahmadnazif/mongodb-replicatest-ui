@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MongoDbReplicaLoadTest.Server.Services;
+using MongoDbReplicaLoadTest.Shared.Enums;
 using MongoDbReplicaLoadTest.Shared.Models;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -18,6 +19,19 @@ public class SmsHub : Hub
         this.logger = logger;
         this.db = db;
         this.cache = cache;
+    }
+
+    public string GetDbSettings(MongoSettingsType type)
+    {
+        try
+        {
+            var dbSettings = db.GetSettings(type);
+            return JsonSerializer.Serialize(dbSettings);
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
     }
 
     public async Task<long> CountCollectionRowAsync()

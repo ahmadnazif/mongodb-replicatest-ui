@@ -1,5 +1,6 @@
 ﻿using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using MongoDbReplicaLoadTest.Shared.Enums;
 using MongoDbReplicaLoadTest.Shared.Models;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -25,6 +26,26 @@ public class MongoDb : IMongoDb
         var db = client.GetDatabase(dbName);
 
         collections.Add(COLL_QUEUE, db.GetCollection<Sms>(COLL_QUEUE));
+
+        dbSettings = db.Settings;
+        clientSettings = db.Client.Settings;
+        queueCollectionSettings = QueueCollection.Settings;
+
+    }
+
+    private readonly MongoDatabaseSettings dbSettings;
+    private readonly MongoClientSettings clientSettings;
+    private readonly MongoCollectionSettings queueCollectionSettings;
+
+    public object GetSettings(MongoSettingsType type)
+    {
+        return type switch
+        {
+            MongoSettingsType.Db => dbSettings,
+            MongoSettingsType.Client => clientSettings,
+            MongoSettingsType.QueueCollection => queueCollectionSettings,
+            _ => null
+        };
     }
 
     private IMongoCollection<Sms> QueueCollection => collections[COLL_QUEUE];
@@ -131,6 +152,7 @@ public class MongoDb : IMongoDb
 
 public interface IMongoDb
 {
+    MongoDatabaseSettings GetSettings(MongoSettingsType type);
     Task<long> CountQueueCollectionRowAsync();
     Task<PostResponse> InsertSmsToQueueAsync(string from, string to, string content);
     Task<PostResponse> InsertBatchSmsAsync(int iteration, string from, string to, string content);

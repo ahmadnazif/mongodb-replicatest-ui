@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MongoDbReplicaLoadTest.Client.HubClients;
+using MongoDbReplicaLoadTest.Shared.Enums;
 using Sotsera.Blazor.Toaster;
 using System.Text.Json;
 using System.Timers;
@@ -49,6 +50,18 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         };
     }
 
+    #region Db settings
+    protected MarkupString MongoSettings { get; set; } = new();
+    protected async Task GetMongoSettingsAsync(MongoSettingsType type)
+    {
+        var resp = await Signalr.GetDbSettingsAsync(type);
+        MongoSettings = new($"<strong>DB Settings:</strong><br />{resp}");
+    }
+
+    protected void ClearMongoSettings() => MongoSettings = new();
+
+    #endregion
+
     #region Part 1
     protected MarkupString Result1 { get; set; } = new();
     protected async Task CountAllSmsAsync()
@@ -60,7 +73,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         else
         {
             Result1 = new();
-            Toastr.Warning($"NO SMS exist");
+            Toastr.Warning($"No SMS exist");
         }
     }
 

@@ -35,38 +35,64 @@ else
 <hr />
 
 <div hidden="@ContentDivHidden()">
-    <div class="card">
-        <div class="card-header">
-            <label>Count all SMS</label>
-        </div>
-        <div class="card-body">
-            <label>&nbsp;</label>
-            <div class="col-sm-10">
-                <button class="btn btn-success" @onclick="async() => await CountAllSmsAsync()">Count</button>
-                <button class="btn btn-outline-secondary" @onclick="() => Clear1()">Clear</button>
-                &nbsp;&nbsp;@Result1
-            </div>
-        </div>
-    </div>
-    <br />
-    <div class="card">
-        <div class="card-header">
-            <label>Get SMS by Message ID</label>
-        </div>
-        <div class="card-body">
-            <label>Message ID</label>
-            <div class="col-sm-4">
-                <div class="input-group">
-                    <input type="text" class="form-control" @bind="MsgId" />
-                    <button class="btn btn-success" @onclick="async() => await CheckSmsExistAsync()">Check</button>
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <label>Mongo settings</label>
                 </div>
-                <br />
-                <br />
-                @Result2
+                <div class="card-body">
+                    <label>&nbsp;</label>
+                    <div class="col-sm-10">
+                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync()">Get Settings</button>
+                        <button class="btn btn-outline-secondary" @onclick="() => ClearMongoSettings()">Clear</button>
+                        <br />
+                        <br />
+                        @MongoSettings
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <label>Count all SMS</label>
+                </div>
+                <div class="card-body">
+                    <label>&nbsp;</label>
+                    <div class="col-sm-10">
+                        <button class="btn btn-success" @onclick="async() => await CountAllSmsAsync()">Count</button>
+                        <button class="btn btn-outline-secondary" @onclick="() => Clear1()">Clear</button>
+                        &nbsp;&nbsp;@Result1
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <label>Get SMS by Message ID</label>
+                </div>
+                <div class="card-body">
+                    <label>Message ID</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <input type="text" class="form-control" @bind="MsgId" />
+                            <button class="btn btn-success" @onclick="async() => await CheckSmsExistAsync()">Check</button>
+                        </div>
+                        <br />
+                        <br />
+                        @Result2
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <br />
+
     <div class="card">
         <div class="card-header">
             <label>Stream all SMS</label>

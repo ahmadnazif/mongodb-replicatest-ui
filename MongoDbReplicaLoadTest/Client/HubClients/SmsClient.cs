@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
+using MongoDbReplicaLoadTest.Shared.Enums;
 using MongoDbReplicaLoadTest.Shared.Models;
 
 namespace MongoDbReplicaLoadTest.Client.HubClients;
@@ -124,6 +125,19 @@ public class SmsClient : IAsyncDisposable
     }
 
     #region Methods
+
+    public async Task<string> GetDbSettingsAsync(MongoSettingsType type)
+    {
+        try
+        {
+            return await hubConnection.InvokeAsync<string>("GetDbSettings", type);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return ex.Message;
+        }
+    }
 
     public async Task<PostResponse> InsertAsync(SmsBase sms)
     {
