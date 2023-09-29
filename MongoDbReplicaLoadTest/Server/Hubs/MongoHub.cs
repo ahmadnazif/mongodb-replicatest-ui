@@ -8,13 +8,13 @@ using System.Text.Json;
 
 namespace MongoDbReplicaLoadTest.Server.Hubs;
 
-public class SmsHub : Hub
+public class MongoHub : Hub
 {
-    private readonly ILogger<SmsHub> logger;
+    private readonly ILogger<MongoHub> logger;
     private readonly IMongoDb db;
     private readonly CacheService cache;
 
-    public SmsHub(ILogger<SmsHub> logger, IMongoDb db, CacheService cache)
+    public MongoHub(ILogger<MongoHub> logger, IMongoDb db, CacheService cache)
     {
         this.logger = logger;
         this.db = db;

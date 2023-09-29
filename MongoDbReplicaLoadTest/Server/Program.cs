@@ -40,7 +40,7 @@ app.UseRouting();
 
 app.MapRazorPages();
 app.MapControllers();
-app.MapHub<SmsHub>("/sms-hub");
+app.MapHub<MongoHub>("/mongo-hub");
 
 app.MapFallbackToFile("index.html");
 

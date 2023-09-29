@@ -11,7 +11,7 @@ namespace MongoDbReplicaLoadTest.Server.Services;
 
 public class MongoDb : IMongoDb
 {
-    public const string COLL_QUEUE = "queue";
+    public const string COLLECTION_QUEUE = "queue";
     private readonly ILogger<MongoDb> logger;
     private readonly IMongoDatabase db;
     private readonly Dictionary<string, IMongoCollection<Sms>> collections = new();
@@ -25,9 +25,9 @@ public class MongoDb : IMongoDb
 
             MongoUrl = GetMongoUrl(config);
             MongoClient client = new(MongoUrl);
-            db = client.GetDatabase(MongoUrl.DatabaseName);
 
-            collections.Add(COLL_QUEUE, db.GetCollection<Sms>(COLL_QUEUE));
+            db = client.GetDatabase(MongoUrl.DatabaseName);
+            collections.Add(COLLECTION_QUEUE, db.GetCollection<Sms>(COLLECTION_QUEUE));
         }
         catch (Exception ex)
         {
@@ -37,18 +37,16 @@ public class MongoDb : IMongoDb
 
     private static MongoUrl GetMongoUrl(IConfiguration config)
     {
-        List<MongoServerAddress> serverList = new();
-        var servers = config.GetSection("MongoDb:Servers").Get<string[]>().ToList();
-        foreach (var s in servers)
+        List<MongoServerAddress> servers = new();
+        foreach (var s in config.GetSection("MongoDb:Servers").Get<string[]>().ToList())
         {
-            serverList.Add(new MongoServerAddress(s));
+            servers.Add(new MongoServerAddress(s));
         }
 
         MongoUrlBuilder builder = new()
         {
-            Servers = serverList,
+            Servers = servers,
             DatabaseName = config["MongoDb:DbName"],
-            DirectConnection = null
         };
 
         var useReplica = bool.Parse(config["MongoDb:Replication:UseReplication"]);
@@ -58,13 +56,15 @@ public class MongoDb : IMongoDb
         return builder.ToMongoUrl();
     }
 
+    private IMongoCollection<Sms> QueueCollection => collections[COLLECTION_QUEUE];
+
     public object GetSettings(MongoSettingsType type)
     {
         return type switch
         {
-            MongoSettingsType.Db => db.Settings, //dbSettings,
-            MongoSettingsType.Client => db.Client.Settings, // clientSettings,
-            MongoSettingsType.QueueCollection => QueueCollection.Settings, // queueCollectionSettings,
+            MongoSettingsType.Db => db.Settings,
+            MongoSettingsType.Client => db.Client.Settings,
+            MongoSettingsType.QueueCollection => QueueCollection.Settings,
             _ => null
         };
     }
@@ -77,7 +77,7 @@ public class MongoDb : IMongoDb
             return new PostResponse
             {
                 IsSuccess = true,
-                Message = $"Server connected. Checked on {DateTime.Now.ToLongTimeString()}"
+                Message = $"MongoDb Server '{MongoUrl.Url}' connected. Checked on {DateTime.Now.ToLongTimeString()}"
             };
         }
         catch (Exception ex)
@@ -85,16 +85,12 @@ public class MongoDb : IMongoDb
             return new PostResponse
             {
                 IsSuccess = false,
-                Message = $"Failed to connect to database: {ex.Message}"
+                Message = $"Failed to connect to server '{MongoUrl.Url}: {ex.Message}"
             };
         }
     }
 
-    private IMongoCollection<Sms> QueueCollection => collections[COLL_QUEUE];
-
     private static FilterDefinition<Sms> EqFilter(string msgId) => Builders<Sms>.Filter.Eq(x => x.MsgId, msgId);
-
-    
 
     public async Task<long> CountQueueCollectionRowAsync()
     {

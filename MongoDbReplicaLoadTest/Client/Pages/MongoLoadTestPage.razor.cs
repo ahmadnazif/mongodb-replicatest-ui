@@ -12,7 +12,7 @@ namespace MongoDbReplicaLoadTest.Client.Pages;
 public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
 {
     [Inject] protected ILogger<MongoLoadTestBase> Logger { get; set; }
-    [Inject] protected SmsClient Signalr { get; set; }
+    [Inject] protected MongoClient Signalr { get; set; }
     [Inject] protected IToaster Toastr { get; set; }
     protected PostResponse MongoPingStatus { get; set; } = new() { IsSuccess = false, Message = "Unknown ping status" };
 

@@ -58,8 +58,8 @@ else
                     <div class="col-sm-10">
                         <button class="btn btn-success" @onclick="async() => await PingMongoServerAsync()">Ping Mongo Server</button>
                         <button class="btn btn-success" @onclick="async() => await GetMongoUrlAsync()">Get Mongo URL</button>
-                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Db)">Get DB Settings</button>
                         <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Client)">Get Client Settings</button>
+                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Db)">Get DB Settings</button>
                         <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.QueueCollection)">Get Queue Collection Settings</button>
                         <button class="btn btn-outline-secondary" @onclick="() => ClearMongoSettings()">Clear</button>
                         <br />
@@ -173,6 +173,43 @@ else
             </div>
         </div>
     </div>
+
+    <br />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <label>Insert SMS</label>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Iteration</label>
+                            <input type="number" class="form-control" @bind="MsgId" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>From</label>
+                            <input type="text" class="form-control" @bind="MsgId" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>To</label>
+                            <input type="text" class="form-control" @bind="MsgId" />
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="input-group">
+                            <input type="text" class="form-control" @bind="MsgId" />
+                            <button class="btn btn-success">Insert</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br />
 </div>
 
 @code {

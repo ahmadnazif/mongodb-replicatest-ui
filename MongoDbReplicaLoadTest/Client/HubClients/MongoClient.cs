@@ -5,11 +5,11 @@ using MongoDbReplicaLoadTest.Shared.Models;
 
 namespace MongoDbReplicaLoadTest.Client.HubClients;
 
-public class SmsClient : IAsyncDisposable
+public class MongoClient : IAsyncDisposable
 {
-    private const string HUB_ROUTE = "/sms-hub";
+    private const string HUB_ROUTE = "/mongo-hub";
     private string clientId = "BlazorClient";
-    private readonly ILogger<SmsClient> logger;
+    private readonly ILogger<MongoClient> logger;
     private readonly HubConnection hubConnection;
     private CancellationTokenSource cts;
     public bool IsConnected { get; private set; }
@@ -17,7 +17,7 @@ public class SmsClient : IAsyncDisposable
     public DateTime? ConnectedTime { get; private set; }
     public string HubUrl { get; }
 
-    public SmsClient(ILogger<SmsClient> logger, NavigationManager navMan)
+    public MongoClient(ILogger<MongoClient> logger, NavigationManager navMan)
     {
         this.logger = logger;
         HubUrl = $"{navMan.BaseUri.TrimEnd('/')}{HUB_ROUTE}?clientid={clientId}";
