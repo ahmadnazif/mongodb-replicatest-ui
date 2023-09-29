@@ -126,16 +126,46 @@ public class SmsClient : IAsyncDisposable
 
     #region Methods
 
-    public async Task<string> GetDbSettingsAsync(MongoSettingsType type)
+    public async Task<string> GetMongoUrlAsync()
     {
         try
         {
-            return await hubConnection.InvokeAsync<string>("GetDbSettings", type);
+            return await hubConnection.InvokeAsync<string>("GetMongoUrl");
         }
         catch (Exception ex)
         {
             logger.LogError(ex.Message);
             return ex.Message;
+        }
+    }
+
+    public async Task<string> GetSettingsAsync(MongoSettingsType type)
+    {
+        try
+        {
+            return await hubConnection.InvokeAsync<string>("GetSettings", type);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return ex.Message;
+        }
+    }
+
+    public async Task<PostResponse> PingServerAsync()
+    {
+        try
+        {
+            return await hubConnection.InvokeAsync<PostResponse>("PingServerAsync");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return new PostResponse
+            {
+                IsSuccess = false,
+                Message = ex.Message
+            };
         }
     }
 
@@ -161,7 +191,7 @@ public class SmsClient : IAsyncDisposable
         catch (Exception ex)
         {
             logger.LogError(ex.Message);
-            return new PostResponse { IsSuccess = false, Message = ex.Message};
+            return new PostResponse { IsSuccess = false, Message = ex.Message };
         }
     }
 

@@ -21,17 +21,35 @@ public class SmsHub : Hub
         this.cache = cache;
     }
 
-    public string GetDbSettings(MongoSettingsType type)
+    public string GetMongoUrl()
     {
         try
         {
-            var dbSettings = db.GetSettings(type);
-            return JsonSerializer.Serialize(dbSettings);
+            var settings = db.MongoUrl;
+            return JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
         }
         catch (Exception ex)
         {
             return ex.Message;
         }
+    }
+
+    public string GetSettings(MongoSettingsType type)
+    {
+        try
+        {
+            var settings = db.GetSettings(type);
+            return JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    public async Task<PostResponse> PingServerAsync()
+    {
+        return await db.PingServerAsync();
     }
 
     public async Task<long> CountCollectionRowAsync()

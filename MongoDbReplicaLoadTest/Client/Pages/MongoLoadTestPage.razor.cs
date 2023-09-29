@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MongoDbReplicaLoadTest.Client.HubClients;
 using MongoDbReplicaLoadTest.Shared.Enums;
+using MongoDbReplicaLoadTest.Shared.Models;
 using Sotsera.Blazor.Toaster;
 using System.Text.Json;
 using System.Timers;
@@ -13,6 +14,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
     [Inject] protected ILogger<MongoLoadTestBase> Logger { get; set; }
     [Inject] protected SmsClient Signalr { get; set; }
     [Inject] protected IToaster Toastr { get; set; }
+    protected PostResponse MongoPingStatus { get; set; } = new() { IsSuccess = false, Message = "Unknown ping status" };
 
     protected MarkupString ConnectionInfo { get; set; } = new("Not connected to hub");
 
@@ -45,6 +47,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
             Toastr.Success($"Reconnected success. Connection ID: {e.ConnectionId}");
             ConnectionInfo = new($"<b>ConnectionId:</b> {Signalr.ConnectionId}, <b>Connected on</b> {Signalr.ConnectedTime}");
 
+            await PingMongoServerAsync();
             await Task.Delay(100);
             StateHasChanged();
         };
@@ -54,8 +57,23 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
     protected MarkupString MongoSettings { get; set; } = new();
     protected async Task GetMongoSettingsAsync(MongoSettingsType type)
     {
-        var resp = await Signalr.GetDbSettingsAsync(type);
-        MongoSettings = new($"<strong>DB Settings:</strong><br />{resp}");
+        var resp = await Signalr.GetSettingsAsync(type);
+        MongoSettings = new($"<strong>{type}:</strong><br />{resp}");
+    }
+
+    protected async Task GetMongoUrlAsync()
+    {
+        var resp = await Signalr.GetMongoUrlAsync();
+        MongoSettings = new($"<strong>Mongo URL:</strong><br />{resp}");
+    }
+
+    protected async Task PingMongoServerAsync()
+    {
+        MongoPingStatus = await Signalr.PingServerAsync();
+        if (MongoPingStatus.IsSuccess)
+            Toastr.Success(MongoPingStatus.Message);
+        else
+            Toastr.Error(MongoPingStatus.Message);
     }
 
     protected void ClearMongoSettings() => MongoSettings = new();
@@ -124,7 +142,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         StreamCurrentCount = 0;
         StreamTotalCount = await Signalr.CountAsync();
 
-        await foreach(var s in Signalr.StartStreaming(DelayMs))
+        await foreach (var s in Signalr.StartStreaming(DelayMs))
         {
             try
             {
@@ -164,7 +182,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
 
     protected async Task SetStreamingDelayAsync()
     {
-       var resp = await Signalr.SetDelayAsync(DelayMs);
+        var resp = await Signalr.SetDelayAsync(DelayMs);
 
         if (resp.IsSuccess)
             Toastr.Success(resp.Message);
@@ -186,6 +204,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
     {
         HandleSignalrEvent();
         await Signalr.StartAsync();
+        await PingMongoServerAsync();
         ConnectionInfo = new($"<b>ConnectionId:</b> {Signalr.ConnectionId}, <b>Connected on</b> {Signalr.ConnectedTime}");
     }
 

@@ -1,3 +1,4 @@
+global using MongoDbReplicaLoadTest.Shared.Enums;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MongoDbReplicaLoadTest.Client;

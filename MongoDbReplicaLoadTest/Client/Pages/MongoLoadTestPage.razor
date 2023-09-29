@@ -35,6 +35,18 @@ else
 <hr />
 
 <div hidden="@ContentDivHidden()">
+    @if (!MongoPingStatus.IsSuccess)
+    {
+        <div class="row">
+            <div class="col">
+                <div class="alert alert-danger">
+                    @MongoPingStatus.Message
+                </div>
+            </div>
+        </div>
+        <br />
+    }
+
     <div class="row">
         <div class="col">
             <div class="card">
@@ -44,16 +56,23 @@ else
                 <div class="card-body">
                     <label>&nbsp;</label>
                     <div class="col-sm-10">
-                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync()">Get Settings</button>
+                        <button class="btn btn-success" @onclick="async() => await PingMongoServerAsync()">Ping Mongo Server</button>
+                        <button class="btn btn-success" @onclick="async() => await GetMongoUrlAsync()">Get Mongo URL</button>
+                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Db)">Get DB Settings</button>
+                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Client)">Get Client Settings</button>
+                        <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.QueueCollection)">Get Queue Collection Settings</button>
                         <button class="btn btn-outline-secondary" @onclick="() => ClearMongoSettings()">Clear</button>
                         <br />
                         <br />
-                        @MongoSettings
+                        <pre>@MongoSettings</pre>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <br />
+
     <div class="row">
         <div class="col-md-6">
             <div class="card">
@@ -93,58 +112,63 @@ else
 
     <br />
 
-    <div class="card">
-        <div class="card-header">
-            <label>Stream all SMS</label>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-sm-6">
-                    <label>Delay in millisecond per result</label>
-                    <select class="form-select" @bind="DelayMs">
-                        <option value="2000">2 second</option>
-                        <option value="1000">1 second</option>
-                        <option value="500">1/2 second</option>
-                        <option value="100">1/10 second</option>
-                        <option value="10">1/100 second</option>
-                        <option value="1">1/1000 second</option>
-                        <option value="0">Unlimited</option>
-                    </select>
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <label>Stream all SMS</label>
                 </div>
-                <div class="col-sm-4">
-                    <label>&nbsp;</label>
-                    @if (IsStreamingStarted)
-                    {
-                        <div class="input-group">
-                            <button class="btn btn-outline-success" @onclick="async() => await SetStreamingDelayAsync()">Set Delay</button>
-                            <button class="btn btn-danger" @onclick="() => StopStreaming()">Stop Streaming</button>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <label>Delay in millisecond per result</label>
+                            <select class="form-select" @bind="DelayMs">
+                                <option value="2000">2 second</option>
+                                <option value="1000">1 second</option>
+                                <option value="500">1/2 second</option>
+                                <option value="100">1/10 second</option>
+                                <option value="10">1/100 second</option>
+                                <option value="1">1/1000 second</option>
+                                <option value="0">Unlimited</option>
+                            </select>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="input-group">
-                            <button class="btn btn-outline-success" @onclick="async() => await SetStreamingDelayAsync()">Set Delay</button>
-                            <button class="btn btn-success" @onclick="async () => await StartStreamingAsync()">Start Streaming</button>
+                        <div class="col-sm-4">
+                            <label>&nbsp;</label>
+                            @if (IsStreamingStarted)
+                            {
+                                <div class="input-group">
+                                    <button class="btn btn-outline-success" @onclick="async() => await SetStreamingDelayAsync()">Set Delay</button>
+                                    <button class="btn btn-danger" @onclick="() => StopStreaming()">Stop Streaming</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="input-group">
+                                    <button class="btn btn-outline-success" @onclick="async() => await SetStreamingDelayAsync()">Set Delay</button>
+                                    <button class="btn btn-success" @onclick="async () => await StartStreamingAsync()">Start Streaming</button>
+                                </div>
+                            }
                         </div>
-                    }
-                </div>
-            </div>
-            <br />
-            <div class="row">
-                <div class="col-sm-12">
-                    @if (IsStreamingStarted)
-                    {
-                        <div class="alert alert-info">
-                            Streaming data is logged in console log. Please view the console log for details<br />
-                            <strong>Speed:</strong> @Tps data/sec
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-sm-12">
+                            @if (IsStreamingStarted)
+                            {
+                                <div class="alert alert-info">
+                                    Streaming data is logged in console log. Please view the console log for details<br />
+                                    <strong>Receiving:</strong> @StreamCurrentCount / @StreamTotalCount<br />
+                                    <strong>Speed:</strong> @Tps data/sec
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-secondary">
+                                    Streaming data is logged in console log. Please view the console log for details
+                                </div>
+                            }
                         </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-secondary">
-                            Streaming data is logged in console log. Please view the console log for details
-                        </div>
-                    }
+                    </div>
                 </div>
             </div>
         </div>

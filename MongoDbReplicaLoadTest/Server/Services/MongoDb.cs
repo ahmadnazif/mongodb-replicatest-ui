@@ -1,9 +1,11 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using MongoDbReplicaLoadTest.Shared.Enums;
 using MongoDbReplicaLoadTest.Shared.Models;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace MongoDbReplicaLoadTest.Server.Services;
 
@@ -11,48 +13,101 @@ public class MongoDb : IMongoDb
 {
     public const string COLL_QUEUE = "queue";
     private readonly ILogger<MongoDb> logger;
+    private readonly IMongoDatabase db;
     private readonly Dictionary<string, IMongoCollection<Sms>> collections = new();
+    public MongoUrl MongoUrl { get; }
 
     public MongoDb(ILogger<MongoDb> logger, IConfiguration config)
     {
-        this.logger = logger;
+        try
+        {
+            this.logger = logger;
 
-        var host = config["MongoDb:Host"];
-        var port = int.Parse(config["MongoDb:Port"]);
-        var dbName = config["MongoDb:DbName"];
-        var conString = $"mongodb://{host}:{port}";
+            MongoUrl = GetMongoUrl(config);
+            MongoClient client = new(MongoUrl);
+            db = client.GetDatabase(MongoUrl.DatabaseName);
 
-        MongoClient client = new(conString);
-        var db = client.GetDatabase(dbName);
-
-        collections.Add(COLL_QUEUE, db.GetCollection<Sms>(COLL_QUEUE));
-
-        dbSettings = db.Settings;
-        clientSettings = db.Client.Settings;
-        queueCollectionSettings = QueueCollection.Settings;
-
+            collections.Add(COLL_QUEUE, db.GetCollection<Sms>(COLL_QUEUE));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+        }        
     }
 
-    private readonly MongoDatabaseSettings dbSettings;
-    private readonly MongoClientSettings clientSettings;
-    private readonly MongoCollectionSettings queueCollectionSettings;
+    private static MongoUrl GetMongoUrl(IConfiguration config)
+    {
+        List<MongoServerAddress> serverList = new();
+        var servers = config.GetSection("MongoDb:Servers").Get<string[]>().ToList();
+        foreach (var s in servers)
+        {
+            serverList.Add(new MongoServerAddress(s));
+        }
+
+        MongoUrlBuilder builder = new()
+        {
+            Servers = serverList,
+            DatabaseName = config["MongoDb:DbName"],
+            DirectConnection = null
+        };
+
+        var useReplica = bool.Parse(config["MongoDb:Replication:UseReplication"]);
+        if (useReplica)
+            builder.ReplicaSetName = config["MongoDb:Replication:ReplicaSetName"];
+
+        return builder.ToMongoUrl();
+    }
 
     public object GetSettings(MongoSettingsType type)
     {
         return type switch
         {
-            MongoSettingsType.Db => dbSettings,
-            MongoSettingsType.Client => clientSettings,
-            MongoSettingsType.QueueCollection => queueCollectionSettings,
+            MongoSettingsType.Db => db.Settings, //dbSettings,
+            MongoSettingsType.Client => db.Client.Settings, // clientSettings,
+            MongoSettingsType.QueueCollection => QueueCollection.Settings, // queueCollectionSettings,
             _ => null
         };
+    }
+
+    public async Task<PostResponse> PingServerAsync()
+    {
+        try
+        {
+            var result = await db.RunCommandAsync<BsonDocument>(new BsonDocument("ping", 1));
+            return new PostResponse
+            {
+                IsSuccess = true,
+                Message = $"Server connected. Checked on {DateTime.Now.ToLongTimeString()}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new PostResponse
+            {
+                IsSuccess = false,
+                Message = $"Failed to connect to database: {ex.Message}"
+            };
+        }
     }
 
     private IMongoCollection<Sms> QueueCollection => collections[COLL_QUEUE];
 
     private static FilterDefinition<Sms> EqFilter(string msgId) => Builders<Sms>.Filter.Eq(x => x.MsgId, msgId);
 
-    public async Task<long> CountQueueCollectionRowAsync() => await QueueCollection.EstimatedDocumentCountAsync();
+    
+
+    public async Task<long> CountQueueCollectionRowAsync()
+    {
+        try
+        {
+            return await QueueCollection.EstimatedDocumentCountAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return 0;
+        }
+    }
 
     public async Task<PostResponse> InsertSmsToQueueAsync(string from, string to, string content)
     {
@@ -152,7 +207,9 @@ public class MongoDb : IMongoDb
 
 public interface IMongoDb
 {
-    MongoDatabaseSettings GetSettings(MongoSettingsType type);
+    MongoUrl MongoUrl { get; }
+    object GetSettings(MongoSettingsType type);
+    Task<PostResponse> PingServerAsync();
     Task<long> CountQueueCollectionRowAsync();
     Task<PostResponse> InsertSmsToQueueAsync(string from, string to, string content);
     Task<PostResponse> InsertBatchSmsAsync(int iteration, string from, string to, string content);
