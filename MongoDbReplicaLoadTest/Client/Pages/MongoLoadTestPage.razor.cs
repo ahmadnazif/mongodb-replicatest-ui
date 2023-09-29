@@ -70,10 +70,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
     protected async Task PingMongoServerAsync()
     {
         MongoPingStatus = await Signalr.PingServerAsync();
-        if (MongoPingStatus.IsSuccess)
-            Toastr.Success(MongoPingStatus.Message);
-        else
-            Toastr.Error(MongoPingStatus.Message);
+        MongoSettings = new($"<strong>Ping response:</strong><br />{MongoPingStatus.Message}");
     }
 
     protected void ClearMongoSettings() => MongoSettings = new();
@@ -90,8 +87,8 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
             Result1 = new($"{count} SMS exist in 'queue' collection");
         else
         {
-            Result1 = new();
-            Toastr.Warning($"No SMS exist");
+            Result1 = new($"No SMS exist in 'queue' collection");
+            //Toastr.Warning($"No SMS exist");
         }
     }
 
@@ -200,12 +197,27 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
 
     #endregion
 
+    #region Part 4
+
+    protected MarkupString Part4 { get; set; } = new();
+    protected InsertMultiSms InsertSmsModel { get; set; } = new();
+
+    public async Task InsertSmsAsync()
+    {
+        var m = InsertSmsModel;
+
+        var resp = await Signalr.InsertBatchAsync(m);
+        Part4 = new(resp.Message);
+    }
+
+    #endregion
+
     protected async Task StartAsync()
     {
         HandleSignalrEvent();
         await Signalr.StartAsync();
-        await PingMongoServerAsync();
         ConnectionInfo = new($"<b>ConnectionId:</b> {Signalr.ConnectionId}, <b>Connected on</b> {Signalr.ConnectedTime}");
+        await Task.Run(async () => await PingMongoServerAsync());
     }
 
     protected async Task StopAsync()

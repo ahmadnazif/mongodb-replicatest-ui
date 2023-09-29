@@ -46,7 +46,7 @@ public class MongoDb : IMongoDb
         MongoUrlBuilder builder = new()
         {
             Servers = servers,
-            DatabaseName = config["MongoDb:DbName"],
+            DatabaseName = config["MongoDb:DbName"]
         };
 
         var useReplica = bool.Parse(config["MongoDb:Replication:UseReplication"]);

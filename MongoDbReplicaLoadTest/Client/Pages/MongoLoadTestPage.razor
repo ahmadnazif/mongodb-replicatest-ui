@@ -49,7 +49,7 @@ else
 
     <div class="row">
         <div class="col">
-            <div class="card">
+            <div class="card shadow-lg">
                 <div class="card-header">
                     <label>Mongo settings</label>
                 </div>
@@ -75,7 +75,7 @@ else
 
     <div class="row">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card shadow-lg">
                 <div class="card-header">
                     <label>Count all SMS</label>
                 </div>
@@ -90,7 +90,7 @@ else
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
+            <div class="card shadow-lg">
                 <div class="card-header">
                     <label>Get SMS by Message ID</label>
                 </div>
@@ -114,7 +114,7 @@ else
 
     <div class="row">
         <div class="col">
-            <div class="card">
+            <div class="card shadow-lg">
                 <div class="card-header">
                     <label>Stream all SMS</label>
                 </div>
@@ -178,7 +178,7 @@ else
 
     <div class="row">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card shadow-lg">
                 <div class="card-header">
                     <label>Insert SMS</label>
                 </div>
@@ -186,24 +186,28 @@ else
                     <div class="row">
                         <div class="col-md-4">
                             <label>Iteration</label>
-                            <input type="number" class="form-control" @bind="MsgId" />
+                            <input type="number" class="form-control" @bind="InsertSmsModel.Iteration" />
                         </div>
                         <div class="col-md-4">
                             <label>From</label>
-                            <input type="text" class="form-control" @bind="MsgId" />
+                            <input type="text" class="form-control" @bind="InsertSmsModel.From" />
                         </div>
                         <div class="col-md-4">
                             <label>To</label>
-                            <input type="text" class="form-control" @bind="MsgId" />
+                            <input type="text" class="form-control" @bind="InsertSmsModel.To" />
                         </div>
                     </div>
                     <br />
                     <div class="row">
+                        <label>Content</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" @bind="MsgId" />
-                            <button class="btn btn-success">Insert</button>
+                            <input type="text" class="form-control" @bind="InsertSmsModel.Content" />
+                            <button class="btn btn-success" @onclick="async() => await InsertSmsAsync()">Insert</button>
                         </div>
                     </div>
+                    <br />
+                    <br />
+                    @Part4
                 </div>
             </div>
         </div>
