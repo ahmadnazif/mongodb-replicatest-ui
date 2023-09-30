@@ -26,7 +26,6 @@ public class MongoHub : Hub
         try
         {
             var settings = db.MongoUrl;
-            logger.LogInformation(settings.ToString());
             return JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
         }
         catch (Exception ex)

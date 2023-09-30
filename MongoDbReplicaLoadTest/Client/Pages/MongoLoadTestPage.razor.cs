@@ -206,8 +206,24 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
     {
         var m = InsertSmsModel;
 
+        if(m.Iteration < 1)
+        {
+            Toastr.Warning("Iteration must at least 1");
+            return;
+        }
+
+        if(string.IsNullOrWhiteSpace(m.From) ||
+            string.IsNullOrWhiteSpace(m.To) ||
+            string.IsNullOrWhiteSpace(m.Content))
+        {
+            Toastr.Warning("From, to & content can't be null");
+            return;
+        }
+
         var resp = await Signalr.InsertBatchAsync(m);
         Part4 = new(resp.Message);
+
+        InsertSmsModel = new();
     }
 
     #endregion
