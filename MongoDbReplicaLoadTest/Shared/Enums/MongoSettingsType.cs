@@ -9,5 +9,6 @@ public enum MongoSettingsType
 {
     Db,
     Client,
-    QueueCollection
+    QueueCollection,
+    Cluster
 }

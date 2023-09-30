@@ -70,21 +70,9 @@ public class MongoDb : IMongoDb
             MongoSettingsType.Db => db.Settings,
             MongoSettingsType.Client => db.Client.Settings,
             MongoSettingsType.QueueCollection => QueueCollection.Settings,
+            MongoSettingsType.Cluster => client.Cluster.Settings,
             _ => null
         };
-    }
-
-    private async Task<BsonDocument> RunAdminCommandAsync(string command)
-    {
-        try
-        {
-            return await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument(command, 1));
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex.Message);
-            throw new(ex.Message);
-        }
     }
 
     public async Task<object> GetReplicaInfoAsync()
