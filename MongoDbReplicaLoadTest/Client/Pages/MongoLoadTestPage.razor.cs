@@ -109,7 +109,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         var sms = await Signalr.GetAsync(MsgId);
 
         if (sms != null)
-            Result2 = new(JsonSerializer.Serialize(sms));
+            Result2 = new(JsonSerializer.Serialize(sms, new JsonSerializerOptions { WriteIndented = true}));
         else
         {
             Result2 = new();
