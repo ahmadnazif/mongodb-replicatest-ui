@@ -152,6 +152,19 @@ public class MongoClient : IAsyncDisposable
         }
     }
 
+    public async Task<string> GetReplicaInfoAsync()
+    {
+        try
+        {
+            return await hubConnection.InvokeAsync<string>("GetReplicaInfoAsync");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return ex.Message;
+        }
+    }
+
     public async Task<PostResponse> PingServerAsync()
     {
         try

@@ -6,6 +6,7 @@ using MongoDbReplicaLoadTest.Shared.Models;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Threading.Tasks.Sources;
 
 namespace MongoDbReplicaLoadTest.Server.Services;
 
@@ -13,7 +14,10 @@ public class MongoDb : IMongoDb
 {
     public const string COLLECTION_QUEUE = "queue";
     private readonly ILogger<MongoDb> logger;
+
+    private readonly MongoClient client;
     private readonly IMongoDatabase db;
+    private readonly IMongoDatabase adminDb;
     private readonly Dictionary<string, IMongoCollection<Sms>> collections = new();
     public MongoUrl MongoUrl { get; }
 
@@ -24,15 +28,16 @@ public class MongoDb : IMongoDb
             this.logger = logger;
 
             MongoUrl = GetMongoUrl(config);
-            MongoClient client = new(MongoUrl);
+            client = new(MongoUrl);
 
             db = client.GetDatabase(MongoUrl.DatabaseName);
+            adminDb = client.GetDatabase("admin");
             collections.Add(COLLECTION_QUEUE, db.GetCollection<Sms>(COLLECTION_QUEUE));
         }
         catch (Exception ex)
         {
             logger.LogError(ex.Message);
-        }        
+        }
     }
 
     private static MongoUrl GetMongoUrl(IConfiguration config)
@@ -67,6 +72,61 @@ public class MongoDb : IMongoDb
             MongoSettingsType.QueueCollection => QueueCollection.Settings,
             _ => null
         };
+    }
+
+    private async Task<BsonDocument> RunAdminCommandAsync(string command)
+    {
+        try
+        {
+            return await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument(command, 1));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            throw new(ex.Message);
+        }
+    }
+
+    public async Task<object> GetReplicaInfoAsync()
+    {
+        try
+        {
+            var isMasterResult = await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument { { "isMaster", 1 } });
+            if (isMasterResult.Contains("setName"))
+            {
+                var members = client.Cluster.Description.Servers
+                    .Select(server => new
+                    {
+                        ReplicaSetName = server.ReplicaSetConfig.Name,
+                        Host = server.EndPoint.ToString(),
+                        State = server.State.ToString(),
+                        Type = server.Type.ToString(),
+                        server.HelloOk,
+                        server.IsCompatibleWithDriver,
+                        server.IsDataBearing,
+                        server.LogicalSessionTimeout,
+                        server.MaxBatchCount,
+                        server.MaxDocumentSize,
+                        server.MaxMessageSize,
+                        server.MaxWireDocumentSize,
+                        server.MaxWireVersion,
+                        server.ReasonChanged,
+                        server.LastHeartbeatTimestamp,
+                        server.AverageRoundTripTime,
+                        server.ElectionId,
+                        server.HeartbeatInterval,
+                        server.ServerId
+                    });
+
+                return members;
+            }
+            else
+                return new List<string>();
+        }
+        catch (Exception)
+        {
+            return new List<string>();
+        }
     }
 
     public async Task<PostResponse> PingServerAsync()
@@ -205,6 +265,7 @@ public interface IMongoDb
 {
     MongoUrl MongoUrl { get; }
     object GetSettings(MongoSettingsType type);
+    Task<object> GetReplicaInfoAsync();
     Task<PostResponse> PingServerAsync();
     Task<long> CountQueueCollectionRowAsync();
     Task<PostResponse> InsertSmsToQueueAsync(string from, string to, string content);

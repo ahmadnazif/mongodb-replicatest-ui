@@ -47,6 +47,19 @@ public class MongoHub : Hub
         }
     }
 
+    public async Task<string> GetReplicaInfoAsync()
+    {
+        try
+        {
+            var info = await db.GetReplicaInfoAsync();
+            return JsonSerializer.Serialize(info, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+    }
+
     public async Task<PostResponse> PingServerAsync()
     {
         return await db.PingServerAsync();

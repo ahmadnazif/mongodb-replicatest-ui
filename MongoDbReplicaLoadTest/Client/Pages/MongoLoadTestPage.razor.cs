@@ -73,6 +73,12 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         MongoSettings = new($"<strong>Ping response:</strong><br />{MongoPingStatus.Message}");
     }
 
+    protected async Task GetReplicaInfoAsync()
+    {
+        var resp = await Signalr.GetReplicaInfoAsync();
+        MongoSettings = new($"<strong>Replica Info:</strong><br />{resp}");
+    }
+
     protected void ClearMongoSettings() => MongoSettings = new();
 
     #endregion

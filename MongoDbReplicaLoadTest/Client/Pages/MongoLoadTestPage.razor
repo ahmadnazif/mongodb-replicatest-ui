@@ -61,6 +61,7 @@ else
                         <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Client)">Get Client Settings</button>
                         <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.Db)">Get DB Settings</button>
                         <button class="btn btn-success" @onclick="async() => await GetMongoSettingsAsync(MongoSettingsType.QueueCollection)">Get Queue Collection Settings</button>
+                        <button class="btn btn-success" @onclick="async() => await GetReplicaInfoAsync()">Get Replica Info</button>
                         <button class="btn btn-outline-secondary" @onclick="() => ClearMongoSettings()">Clear</button>
                         <br />
                         <br />
