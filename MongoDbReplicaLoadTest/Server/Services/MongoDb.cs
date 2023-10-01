@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Servers;
 using MongoDB.Driver.Linq;
 using MongoDbReplicaLoadTest.Shared.Enums;
 using MongoDbReplicaLoadTest.Shared.Models;
@@ -12,13 +13,14 @@ namespace MongoDbReplicaLoadTest.Server.Services;
 
 public class MongoDb : IMongoDb
 {
-    public const string COLLECTION_QUEUE = "queue";
     private readonly ILogger<MongoDb> logger;
 
     private readonly MongoClient client;
     private readonly IMongoDatabase db;
     private readonly IMongoDatabase adminDb;
-    private readonly Dictionary<string, IMongoCollection<Sms>> collections = new();
+    private readonly IMongoCollection<Sms> queueCollection;
+
+    private string primaryServerIp;
     public MongoUrl MongoUrl { get; }
 
     public MongoDb(ILogger<MongoDb> logger, IConfiguration config)
@@ -32,7 +34,13 @@ public class MongoDb : IMongoDb
 
             db = client.GetDatabase(MongoUrl.DatabaseName);
             adminDb = client.GetDatabase("admin");
-            collections.Add(COLLECTION_QUEUE, db.GetCollection<Sms>(COLLECTION_QUEUE));
+            queueCollection = db.GetCollection<Sms>("queue");
+
+            client.Cluster.DescriptionChanged += (s, e) =>
+            {
+                var primary = e.NewClusterDescription.Servers.Where(d => d.Type == ServerType.ReplicaSetPrimary).SingleOrDefault();
+                primaryServerIp = primary.EndPoint.ToString();
+            };
         }
         catch (Exception ex)
         {
@@ -61,7 +69,7 @@ public class MongoDb : IMongoDb
         return builder.ToMongoUrl();
     }
 
-    private IMongoCollection<Sms> QueueCollection => collections[COLLECTION_QUEUE];
+    //private IMongoCollection<Sms> QueueCollection => collections[COLLECTION_QUEUE];
 
     public object GetSettings(MongoSettingsType type)
     {
@@ -69,7 +77,7 @@ public class MongoDb : IMongoDb
         {
             MongoSettingsType.Db => db.Settings,
             MongoSettingsType.Client => db.Client.Settings,
-            MongoSettingsType.QueueCollection => QueueCollection.Settings,
+            MongoSettingsType.QueueCollection => queueCollection.Settings,
             MongoSettingsType.Cluster => client.Cluster.Settings,
             _ => null
         };
@@ -144,7 +152,7 @@ public class MongoDb : IMongoDb
     {
         try
         {
-            return await QueueCollection.EstimatedDocumentCountAsync();
+            return await queueCollection.EstimatedDocumentCountAsync();
         }
         catch (Exception ex)
         {
@@ -167,7 +175,7 @@ public class MongoDb : IMongoDb
                 InTime = DateTime.Now
             };
 
-            await QueueCollection.InsertOneAsync(sms);
+            await queueCollection.InsertOneAsync(sms);
             return new PostResponse
             {
                 IsSuccess = true,
@@ -187,7 +195,7 @@ public class MongoDb : IMongoDb
     public async Task<Sms> GetSmsFromQueueAsync(string msgId)
     {
         var filter = EqFilter(msgId);
-        return await QueueCollection.Find(filter).FirstOrDefaultAsync();
+        return await queueCollection.Find(filter).FirstOrDefaultAsync();
     }
 
     public async Task<PostResponse> InsertBatchSmsAsync(int iteration, string from, string to, string content)
@@ -208,7 +216,7 @@ public class MongoDb : IMongoDb
             }
 
             Stopwatch sw = Stopwatch.StartNew();
-            await QueueCollection.InsertManyAsync(smsList);
+            await queueCollection.InsertManyAsync(smsList);
             sw.Stop();
 
             return new PostResponse
@@ -230,7 +238,7 @@ public class MongoDb : IMongoDb
     public async IAsyncEnumerable<Sms> StreamSmsAsync([EnumeratorCancellation] CancellationToken ct)
     {
         var filter = Builders<Sms>.Filter.Empty;
-        var list = QueueCollection.Find(filter).ToAsyncEnumerable(ct);
+        var list = queueCollection.Find(filter).ToAsyncEnumerable(ct);
 
         await foreach (var l in list)
         {
@@ -245,6 +253,8 @@ public class MongoDb : IMongoDb
                 InTime = l.InTime,
                 Content = l.Content
             };
+
+            logger.LogInformation($"Read from {primaryServerIp}");
         }
     }
 }
