@@ -12,6 +12,7 @@ public class MongoClient : IAsyncDisposable
     private readonly ILogger<MongoClient> logger;
     private readonly HubConnection hubConnection;
     private CancellationTokenSource cts;
+    private CancellationTokenSource ctsInsert;
     public bool IsConnected { get; private set; }
     public string ConnectionId { get; private set; }
     public DateTime? ConnectedTime { get; private set; }
@@ -182,19 +183,6 @@ public class MongoClient : IAsyncDisposable
         }
     }
 
-    public async Task<PostResponse> InsertAsync(SmsBase sms)
-    {
-        try
-        {
-            return await hubConnection.InvokeAsync<PostResponse>("InsertAsync", sms);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex.Message);
-            return new PostResponse { IsSuccess = false, Message = ex.Message };
-        }
-    }
-
     public async Task<PostResponse> InsertBatchAsync(InsertMultiSms sms)
     {
         try
@@ -207,6 +195,31 @@ public class MongoClient : IAsyncDisposable
             return new PostResponse { IsSuccess = false, Message = ex.Message };
         }
     }
+
+    #region Insert batch lazily
+
+    public async IAsyncEnumerable<PostResponse> InsertBatchLazilyAsync(InsertMultiSmsLazily sms)
+    {
+        ctsInsert = new();
+        var list = hubConnection.StreamAsync<PostResponse>("InsertBatchLazilyAsync", sms, ctsInsert.Token);
+
+        await foreach (var l in list)
+        {
+            if (ctsInsert.Token.IsCancellationRequested)
+                yield break;
+
+            yield return l;
+        }
+    }
+
+    public void StopInsertBatchLazily() => ctsInsert.Cancel();
+
+    public async Task<PostResponse> SetDelayForInsertBatchLazilyAsync(int delayMs)
+    {
+        return await hubConnection.InvokeAsync<PostResponse>("SetDelayForInsertMultiSms", delayMs);
+    }
+
+    #endregion
 
     public async Task<long> CountAsync()
     {
@@ -234,6 +247,8 @@ public class MongoClient : IAsyncDisposable
         }
     }
 
+    #region List all (streaming)
+
     public async IAsyncEnumerable<Sms> StartStreaming(int delayMs)
     {
         cts = new();
@@ -250,10 +265,11 @@ public class MongoClient : IAsyncDisposable
 
     public void StopStreaming() => cts.Cancel();
 
-    public async Task<PostResponse> SetDelayAsync(int delayMs)
+    public async Task<PostResponse> SetDelayForStreamAsync(int delayMs)
     {
-        return await hubConnection.InvokeAsync<PostResponse>("SetDelay", delayMs);
+        return await hubConnection.InvokeAsync<PostResponse>("SetDelayForStream", delayMs);
     }
+    #endregion
 
     #endregion
 

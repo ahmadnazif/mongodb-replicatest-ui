@@ -70,14 +70,40 @@ public class MongoHub : Hub
         return await db.CountQueueCollectionRowAsync();
     }
 
-    public async Task<PostResponse> InsertAsync(SmsBase sms)
-    {
-        return await db.InsertSmsToQueueAsync(sms.From, sms.To, sms.Content);
-    }
-
     public async Task<PostResponse> InsertBatchAsync(InsertMultiSms sms)
     {
         return await db.InsertBatchSmsAsync(sms.Iteration, sms.From, sms.To, sms.Content);
+    }
+
+    public async IAsyncEnumerable<PostResponse> InsertBatchLazilyAsync(InsertMultiSmsLazily sms, [EnumeratorCancellation] CancellationToken ct)
+    {
+        cache.DelayMsForInsertMultiSms = sms.DelayMs;
+
+        for (int i = 0; i < sms.Iteration; i++)
+        {
+            var resp = await db.InsertOneSmsAsync(sms.From, sms.To, sms.Content);
+            yield return resp;
+
+            try
+            {
+                await Task.Delay(cache.DelayMsForInsertMultiSms, ct);
+            }
+            catch (TaskCanceledException)
+            {
+                logger.LogInformation($"Stop insert SMS streaming requested by {Context.UserIdentifier} on {DateTime.Now}");
+                yield break;
+            }
+        }
+    }
+
+    public PostResponse SetDelayForInsertMultiSms(int delayMs)
+    {
+        cache.DelayMsForInsertMultiSms = delayMs;
+        return new PostResponse
+        {
+            IsSuccess = true,
+            Message = $"Delay set to {cache.DelayMsForInsertMultiSms} ms"
+        };
     }
 
     public async Task<Sms> GetAsync(string msgId)
@@ -106,7 +132,7 @@ public class MongoHub : Hub
         }
     }
 
-    public PostResponse SetDelay(int delayMs)
+    public PostResponse SetDelayForStream(int delayMs)
     {
         cache.DelayMsForSmsStreaming = delayMs;
         return new PostResponse

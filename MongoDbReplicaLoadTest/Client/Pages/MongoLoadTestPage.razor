@@ -118,7 +118,7 @@ else
         <div class="col">
             <div class="card shadow-lg">
                 <div class="card-header">
-                    <label>Stream all SMS</label>
+                    <label>List all SMS as stream &mdash; using <code>IAsyncEnumerable</code> </label>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -177,12 +177,13 @@ else
     </div>
 
     <br />
-
+    <hr />
+    <br />
     <div class="row">
         <div class="col-md-6">
             <div class="card shadow-lg">
                 <div class="card-header">
-                    <label>Insert SMS</label>
+                    <label>Insert SMS in one run &mdash; <code>MongoCollection.InsertManyAsync()</code></label>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -210,6 +211,88 @@ else
                     <br />
                     <br />
                     @Part4
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header">
+                    <label>Insert SMS one by one &amp; return each result as stream &mdash; <code>MongoCollection.InsertOneAsync()</code></label>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <label>Insert speed</label>
+                            <select class="form-select" @bind="InsertLazilyModel.DelayMs">
+                                <option value="2000">2 second</option>
+                                <option value="1000">1 second</option>
+                                <option value="500">1/2 second</option>
+                                <option value="100">1/10 second</option>
+                                <option value="10">1/100 second</option>
+                                <option value="1">1/1000 second</option>
+                                <option value="0">Unlimited</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label>&nbsp;</label>
+                            @if (IsInsertLazilyStarted)
+                            {
+                                <div class="input-group">
+                                    <button class="btn btn-outline-success" @onclick="async() => await SetInsertBatchLazilyDelayAsync()">Set Delay</button>
+                                    <button class="btn btn-danger" @onclick="() => StopInsertLazily()">Stop Insert</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="input-group">
+                                    <button class="btn btn-outline-success" @onclick="async() => await SetInsertBatchLazilyDelayAsync()">Set Delay</button>
+                                    <button class="btn btn-success" @onclick="async () => await InsertLazilyAsync()">Start Insert</button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Iteration</label>
+                            <input type="number" class="form-control" @bind="InsertLazilyModel.Iteration" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>From</label>
+                            <input type="text" class="form-control" @bind="InsertLazilyModel.From" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>To</label>
+                            <input type="text" class="form-control" @bind="InsertLazilyModel.To" />
+                        </div>
+                    </div>
+                    <br />
+                    <div class="row">
+                        <label>Content</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" @bind="InsertLazilyModel.Content" />
+                        </div>
+                    </div>
+                    <br />
+                    <br />
+                    <div class="row">
+                        <div class="col-sm-12">
+                            @if (IsInsertLazilyStarted)
+                            {
+                                <div class="alert alert-info">
+                                    Streaming response is logged in console log. Please view the console log for details<br />
+                                    <strong>Inserting:</strong> @InsertLazilyCurrentCount / @InsertLazilyModel.Iteration<br />
+                                    <strong>Speed:</strong> @InsertLazilyTps data/sec
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-secondary">
+                                    Streaming response is logged in console log. Please view the console log for details
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

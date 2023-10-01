@@ -153,7 +153,7 @@ public class MongoDb : IMongoDb
         }
     }
 
-    public async Task<PostResponse> InsertSmsToQueueAsync(string from, string to, string content)
+    public async Task<PostResponse> InsertOneSmsAsync(string from, string to, string content)
     {
         try
         {
@@ -256,7 +256,7 @@ public interface IMongoDb
     Task<object> GetReplicaInfoAsync();
     Task<PostResponse> PingServerAsync();
     Task<long> CountQueueCollectionRowAsync();
-    Task<PostResponse> InsertSmsToQueueAsync(string from, string to, string content);
+    Task<PostResponse> InsertOneSmsAsync(string from, string to, string content);
     Task<PostResponse> InsertBatchSmsAsync(int iteration, string from, string to, string content);
     Task<Sms> GetSmsFromQueueAsync(string msgId);
     IAsyncEnumerable<Sms> StreamSmsAsync(CancellationToken ct);

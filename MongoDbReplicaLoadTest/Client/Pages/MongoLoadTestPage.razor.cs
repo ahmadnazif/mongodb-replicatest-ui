@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using MongoDbReplicaLoadTest.Client.HubClients;
 using MongoDbReplicaLoadTest.Shared.Enums;
 using MongoDbReplicaLoadTest.Shared.Models;
@@ -115,7 +116,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         var sms = await Signalr.GetAsync(MsgId);
 
         if (sms != null)
-            Result2 = new(JsonSerializer.Serialize(sms, new JsonSerializerOptions { WriteIndented = true}));
+            Result2 = new(JsonSerializer.Serialize(sms, new JsonSerializerOptions { WriteIndented = true }));
         else
         {
             Result2 = new();
@@ -185,7 +186,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
 
     protected async Task SetStreamingDelayAsync()
     {
-        var resp = await Signalr.SetDelayAsync(DelayMs);
+        var resp = await Signalr.SetDelayForStreamAsync(DelayMs);
 
         if (resp.IsSuccess)
             Toastr.Success(resp.Message);
@@ -206,19 +207,19 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
     #region Part 4
 
     protected MarkupString Part4 { get; set; } = new();
-    protected InsertMultiSms InsertSmsModel { get; set; } = new();
+    protected InsertMultiSms InsertSmsModel { get; set; } = new() { Iteration = 10 };
 
     public async Task InsertSmsAsync()
     {
         var m = InsertSmsModel;
 
-        if(m.Iteration < 1)
+        if (m.Iteration < 1)
         {
             Toastr.Warning("Iteration must at least 1");
             return;
         }
 
-        if(string.IsNullOrWhiteSpace(m.From) ||
+        if (string.IsNullOrWhiteSpace(m.From) ||
             string.IsNullOrWhiteSpace(m.To) ||
             string.IsNullOrWhiteSpace(m.Content))
         {
@@ -232,6 +233,96 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         InsertSmsModel = new();
     }
 
+    #endregion
+
+    #region Part: insert sms lazily
+    protected bool IsInsertLazilyStarted { get; set; }
+    protected int InsertLazilyCurrentCount { get; set; } = 0;
+    protected double InsertLazilyStreamPerc { get; set; } = 0;
+    protected int InsertLazilyCurrentCountInSec { get; set; } = 0;
+    protected int InsertLazilyTps { get; set; }
+    private Timer InsertLazilyTpsTimer { get; set; } = null;
+
+    protected InsertMultiSmsLazily InsertLazilyModel { get; set; } = new() { Iteration = 10, DelayMs = 1000 };
+
+    public async Task InsertLazilyAsync()
+    {
+        var m = InsertLazilyModel;
+
+        if (m.Iteration < 1)
+        {
+            Toastr.Warning("Iteration must at least 1");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(m.From) ||
+            string.IsNullOrWhiteSpace(m.To) ||
+            string.IsNullOrWhiteSpace(m.Content))
+        {
+            Toastr.Warning("From, to & content can't be null");
+            return;
+        }
+
+        StartInsertLazilyTpsTimer();
+
+        IsInsertLazilyStarted = true;
+        InsertLazilyCurrentCount = 0;
+
+        await foreach (var s in Signalr.InsertBatchLazilyAsync(m))
+        {
+            try
+            {
+                InsertLazilyCurrentCount += 1;
+                InsertLazilyCurrentCountInSec += 1;
+                InsertLazilyStreamPerc = (double)InsertLazilyCurrentCount / m.Iteration * 100;
+                Logger.LogInformation($"[{InsertLazilyCurrentCount}] Inserted: {s.IsSuccess}, MsgId: {s.Message}");
+            }
+            catch (OperationCanceledException)
+            {
+
+                Toastr.Info($"Insert operation stopped at {DateTime.Now}");
+            }
+        }
+    }
+
+    protected async Task SetInsertBatchLazilyDelayAsync()
+    {
+        var resp = await Signalr.SetDelayForInsertBatchLazilyAsync(InsertLazilyModel.DelayMs);
+
+        if (resp.IsSuccess)
+            Toastr.Success(resp.Message);
+        else
+            Toastr.Error(resp.Message);
+    }
+
+    private void StartInsertLazilyTpsTimer()
+    {
+        if (InsertLazilyTpsTimer != null)
+            InsertLazilyTpsTimer.Start();
+        else
+        {
+            InsertLazilyTpsTimer = new()
+            {
+                Interval = 2000
+            };
+
+            InsertLazilyTpsTimer.Start();
+            InsertLazilyTpsTimer.Elapsed += (s, e) =>
+            {
+                InsertLazilyTps = InsertLazilyCurrentCountInSec / ((int)InsertLazilyTpsTimer.Interval / 1000);
+                InsertLazilyCurrentCountInSec = 0;
+                StateHasChanged();
+            };
+        }
+    }
+
+    protected void StopInsertLazily()
+    {
+        Signalr.StopInsertBatchLazily();
+        IsInsertLazilyStarted = false;
+        InsertLazilyTpsTimer.Stop();
+        InsertLazilyTps = 0;
+    }
     #endregion
 
     protected async Task StartAsync()
