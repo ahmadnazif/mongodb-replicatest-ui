@@ -44,7 +44,7 @@ public class MongoDb : IMongoDb
         }
         catch (Exception ex)
         {
-            logger.LogError(ex.Message);
+            logger.LogError($"Constructor: {ex.Message}");
         }
     }
 
@@ -91,33 +91,35 @@ public class MongoDb : IMongoDb
                 var members = client.Cluster.Description.Servers
                     .Select(server => new
                     {
-                        ReplicaSetName = server.ReplicaSetConfig.Name,
-                        Host = server.EndPoint.ToString(),
-                        State = server.State.ToString(),
-                        Type = server.Type.ToString(),
-                        server.HelloOk,
-                        server.IsCompatibleWithDriver,
-                        server.IsDataBearing,
-                        server.LogicalSessionTimeout,
-                        server.MaxBatchCount,
-                        server.MaxDocumentSize,
-                        server.MaxMessageSize,
-                        server.MaxWireDocumentSize,
-                        server.MaxWireVersion,
-                        server.ReasonChanged,
-                        server.LastHeartbeatTimestamp,
-                        server.AverageRoundTripTime,
-                        server.ElectionId,
-                        server.HeartbeatInterval,
-                        server.ServerId
+                        ReplicaSetName = server?.ReplicaSetConfig?.Name,
+                        Host = server?.EndPoint.ToString(),
+                        State = server?.State.ToString(),
+                        Type = server?.Type.ToString(),
+                        //server?.HelloOk,
+                        //server?.IsCompatibleWithDriver,
+                        //server?.IsDataBearing,
+                        //server?.LogicalSessionTimeout,
+                        //server?.MaxBatchCount,
+                        //server?.MaxDocumentSize,
+                        //server?.MaxMessageSize,
+                        //server?.MaxWireDocumentSize,
+                        //server?.MaxWireVersion,
+                        //server?.ReasonChanged,
+                        //server?.LastHeartbeatTimestamp,
+                        //server?.AverageRoundTripTime,
+                        //server?.ElectionId,
+                        //server?.HeartbeatInterval,
+                        //server?.ServerId
                     });
 
-                return members;
+                //logger.LogInformation(members.Count().ToString());
+
+                return members.ToList();
             }
             else
                 return new List<string>();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             return new List<string>();
         }
