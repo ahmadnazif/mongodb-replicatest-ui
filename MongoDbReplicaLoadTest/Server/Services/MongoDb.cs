@@ -69,8 +69,6 @@ public class MongoDb : IMongoDb
         return builder.ToMongoUrl();
     }
 
-    //private IMongoCollection<Sms> QueueCollection => collections[COLLECTION_QUEUE];
-
     public object GetSettings(MongoSettingsType type)
     {
         return type switch
@@ -253,8 +251,6 @@ public class MongoDb : IMongoDb
                 InTime = l.InTime,
                 Content = l.Content
             };
-
-            logger.LogInformation($"Read from {primaryServerIp}");
         }
     }
 }

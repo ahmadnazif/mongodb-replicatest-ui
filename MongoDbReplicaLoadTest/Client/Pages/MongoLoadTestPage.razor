@@ -102,8 +102,8 @@ else
                         <div class="input-group">
                             <input type="text" class="form-control" @bind="MsgId" />
                             <button class="btn btn-success" @onclick="async() => await CheckSmsExistAsync()">Check</button>
+                            <button class="btn btn-outline-secondary" @onclick="() => Clear2()">Clear</button>
                         </div>
-                        <br />
                         <br />
                         <pre>@Result2</pre>
                     </div>
@@ -205,7 +205,7 @@ else
                         <label>Content</label>
                         <div class="input-group">
                             <input type="text" class="form-control" @bind="InsertSmsModel.Content" />
-                            <button class="btn btn-success" @onclick="async() => await InsertSmsAsync()">Insert</button>
+                            <button class="btn btn-success" disabled="@IsInserting" @onclick="async () => await InsertSmsAsync()">Insert</button>
                         </div>
                     </div>
                     <br />

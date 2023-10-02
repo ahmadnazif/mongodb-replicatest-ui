@@ -119,8 +119,8 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
             Result2 = new(JsonSerializer.Serialize(sms, new JsonSerializerOptions { WriteIndented = true }));
         else
         {
-            Result2 = new();
-            Toastr.Warning($"SMS with msgid '{MsgId}' not exist");
+            Result2 = new($"SMS with msgid '{MsgId}' not exist");
+            //Toastr.Warning($"SMS with msgid '{MsgId}' not exist");
         }
     }
 
@@ -208,6 +208,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
 
     protected MarkupString Part4 { get; set; } = new();
     protected InsertMultiSms InsertSmsModel { get; set; } = new() { Iteration = 10 };
+    protected bool IsInserting { get; set; } = false;
 
     public async Task InsertSmsAsync()
     {
@@ -227,7 +228,10 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
             return;
         }
 
+        IsInserting = true;
         var resp = await Signalr.InsertBatchAsync(m);
+        IsInserting = false;
+
         Part4 = new(resp.Message);
 
         InsertSmsModel = new();
