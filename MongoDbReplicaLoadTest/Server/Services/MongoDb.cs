@@ -196,7 +196,7 @@ public class MongoDb : IMongoDb
         return await queueCollection.Find(filter).FirstOrDefaultAsync();
     }
 
-    public async Task<PostResponse> InsertBatchSmsAsync(int iteration, string from, string to, string content)
+    public async Task<PostResponse> InsertManySmsAsync(int iteration, string from, string to, string content)
     {
         try
         {
@@ -263,7 +263,7 @@ public interface IMongoDb
     Task<PostResponse> PingServerAsync();
     Task<long> CountQueueCollectionRowAsync();
     Task<PostResponse> InsertOneSmsAsync(string from, string to, string content);
-    Task<PostResponse> InsertBatchSmsAsync(int iteration, string from, string to, string content);
+    Task<PostResponse> InsertManySmsAsync(int iteration, string from, string to, string content);
     Task<Sms> GetSmsFromQueueAsync(string msgId);
     IAsyncEnumerable<Sms> StreamSmsAsync(CancellationToken ct);
 }

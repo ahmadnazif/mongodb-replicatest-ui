@@ -72,7 +72,7 @@ public class MongoHub : Hub
 
     public async Task<PostResponse> InsertBatchAsync(InsertMultiSms sms)
     {
-        return await db.InsertBatchSmsAsync(sms.Iteration, sms.From, sms.To, sms.Content);
+        return await db.InsertManySmsAsync(sms.Iteration, sms.From, sms.To, sms.Content);
     }
 
     public async IAsyncEnumerable<PostResponse> InsertBatchLazilyAsync(InsertMultiSmsLazily sms, [EnumeratorCancellation] CancellationToken ct)
