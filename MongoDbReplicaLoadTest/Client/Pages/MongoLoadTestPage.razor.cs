@@ -334,7 +334,7 @@ public class MongoLoadTestBase : ComponentBase, IAsyncDisposable
         HandleSignalrEvent();
         await Signalr.StartAsync();
         ConnectionInfo = new($"<b>ConnectionId:</b> {Signalr.ConnectionId}, <b>Connected on</b> {Signalr.ConnectedTime}");
-        await Task.Run(async () => await PingMongoServerAsync());
+        //await Task.Run(async () => await PingMongoServerAsync());
     }
 
     protected async Task StopAsync()
